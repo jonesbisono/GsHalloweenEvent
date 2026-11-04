@@ -1,511 +1,182 @@
 <!DOCTYPE html>
-<html lang="es" class="antialiased">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Totebags Studio | Inventario & Ventas en Vivo</title>
+  <title>Halloween Totebags | Inventario & Ventas en Vivo</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase App & Firestore (SDK oficial de Google) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <style>
-    :root {
-      /* Apple Fluid Motion Springs & Easings (WWDC Designing Fluid Interfaces) */
-      --ease-apple-spring: cubic-bezier(0.25, 1, 0.5, 1);
-      --ease-out-fast: cubic-bezier(0.16, 1, 0.3, 1);
-      
-      /* Apple Warm Beige & Linen Palette */
-      --color-canvas: #fbf9f5;
-      --color-canvas-subtle: #f4efe6;
-      --color-surface: #ffffff;
-      --color-surface-translucent: rgba(255, 255, 255, 0.78);
-      --color-border: rgba(190, 175, 155, 0.28);
-      --color-border-subtle: rgba(190, 175, 155, 0.16);
-      
-      /* Typography Colors */
-      --color-text-primary: #1c1917;
-      --color-text-secondary: #57534e;
-      --color-text-tertiary: #8c827a;
-      
-      /* Accents */
-      --color-accent-terracotta: #b85d19;
-      --color-accent-emerald: #15803d;
-      --color-accent-blue: #0369a1;
-      
-      /* System Font Fallback */
-      --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Plus Jakarta Sans", sans-serif;
-    }
-
     body {
-      font-family: var(--font-system);
-      background-color: var(--color-canvas);
-      color: var(--color-text-primary);
-      letter-spacing: -0.012em;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif;
+      background-color: #fbf9f5;
+      color: #1c1917;
+      -webkit-font-smoothing: antialiased;
     }
-
-    .tabular-nums {
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Apple Custom Delicate Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(180, 165, 145, 0.4);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(160, 145, 125, 0.6);
-    }
-
-    /* Apple Design: Instant response on pointer-down with tactile feedback */
-    .btn-pressable {
-      transition: transform 120ms var(--ease-out-fast), background-color 150ms ease, box-shadow 150ms ease, border-color 150ms ease, opacity 150ms ease;
-      will-change: transform;
-    }
-    .btn-pressable:active:not(:disabled) {
-      transform: scale(0.96);
-    }
-    .btn-pressable:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      .btn-pressable:hover:not(:disabled) {
-        transform: translateY(-1px);
-      }
-      .btn-pressable:active:not(:disabled) {
-        transform: translateY(0) scale(0.96);
-      }
-      .row-hover {
-        transition: background-color 120ms var(--ease-out-fast);
-      }
-      .row-hover:hover {
-        background-color: rgba(235, 227, 214, 0.35);
-      }
-    }
-
-    /* Apple Translucent Frosted Glass Material */
     .apple-glass {
-      background: var(--color-surface-translucent);
-      backdrop-filter: blur(25px) saturate(180%);
-      -webkit-backdrop-filter: blur(25px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      box-shadow: 0 4px 24px -1px rgba(90, 70, 50, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(231, 225, 215, 0.7);
     }
-
     .apple-card {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      box-shadow: 0 4px 20px -2px rgba(80, 65, 45, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
-    }
-
-    .apple-card-subtle {
-      background: var(--color-canvas-subtle);
-      border: 1px solid var(--color-border-subtle);
-    }
-
-    /* Apple Segmented Control Track */
-    .segmented-track {
-      background: rgba(215, 205, 190, 0.35);
-      border: 1px solid rgba(190, 175, 155, 0.25);
-      padding: 0.25rem;
-      border-radius: 0.75rem;
-    }
-
-    .segmented-pill-active {
       background: #ffffff;
-      color: #1c1917;
-      box-shadow: 0 2px 8px rgba(70, 50, 30, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      border: 1px solid #ede7dc;
+      box-shadow: 0 4px 20px -2px rgba(28, 25, 23, 0.04);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
-    .segmented-pill-inactive {
-      color: #78716c;
-      background: transparent;
+    .apple-btn {
+      transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-    .segmented-pill-inactive:hover {
-      color: #1c1917;
+    .apple-btn:active {
+      transform: scale(0.94);
     }
-
-    /* Table Input Focus & States */
-    .table-cell-input {
-      background: #faf8f5;
-      border: 1px solid rgba(190, 175, 155, 0.35);
-      color: #1c1917;
-      padding: 0.35rem 0.55rem;
-      border-radius: 0.375rem;
-      font-size: 0.8125rem;
-      font-variant-numeric: tabular-nums;
-      transition: border-color 140ms var(--ease-out-fast), background-color 140ms ease, box-shadow 140ms ease;
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
     }
-    .table-cell-input:focus {
-      outline: none;
-      border-color: #b85d19;
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(184, 93, 25, 0.15);
-    }
-
-    /* Tactile Stepper Buttons */
-    .stepper-btn {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 0.45rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.125rem;
-      font-weight: 700;
-      transition: all 130ms var(--ease-out-fast);
-      user-select: none;
-    }
-    .stepper-btn-minus {
-      background: #eee8de;
-      color: #44403c;
-      border: 1px solid rgba(180, 165, 145, 0.4);
-    }
-    .stepper-btn-minus:hover:not(:disabled) {
-      background: #e2dcd0;
-      color: #1c1917;
-    }
-    .stepper-btn-plus {
-      background: #b85d19;
-      color: #ffffff;
-      border: 1px solid rgba(184, 93, 25, 0.8);
-      box-shadow: 0 2px 6px rgba(184, 93, 25, 0.25);
-    }
-    .stepper-btn-plus:hover:not(:disabled) {
-      background: #9f4f13;
-    }
-
-    /* Modals & Backdrop */
-    .dialog-backdrop {
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 220ms var(--ease-out-fast);
-      background: rgba(30, 25, 20, 0.45);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .dialog-backdrop.is-open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .dialog-panel {
-      transform: scale(0.96) translateY(6px);
-      opacity: 0;
-      transition: transform 220ms var(--ease-apple-spring), opacity 200ms ease;
-      will-change: transform, opacity;
-      background: #fdfcf9;
-      border: 1px solid rgba(200, 185, 165, 0.35);
-    }
-    .dialog-backdrop.is-open .dialog-panel {
-      transform: scale(1) translateY(0);
-      opacity: 1;
-    }
-
-    /* Popover Menu with Origin awareness */
-    .popover-menu {
-      transform-origin: top right;
-      transform: scale(0.95);
-      opacity: 0;
-      pointer-events: none;
-      transition: transform 160ms var(--ease-apple-spring), opacity 150ms ease;
-    }
-    .popover-container:focus-within .popover-menu,
-    .popover-container.open .popover-menu {
-      transform: scale(1);
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* Apple-style floating toast */
-    .apple-toast {
-      transform: translateY(20px) scale(0.96);
-      opacity: 0;
-      pointer-events: none;
-      transition: transform 250ms var(--ease-apple-spring), opacity 200ms ease;
-    }
-    .apple-toast.is-visible {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, ::before, ::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-      .btn-pressable:active {
-        transform: none !important;
-      }
-      .dialog-panel, .apple-toast, .popover-menu {
-        transform: none !important;
-      }
+    .live-dot {
+      animation: pulse-subtle 2s infinite ease-in-out;
     }
   </style>
 </head>
-<body class="min-h-screen pb-20 selection:bg-amber-200 selection:text-amber-900">
+<body class="min-h-screen flex flex-col p-4 md:p-8">
 
-  <!-- TOP BAR / HEADER (APPLE FLOATING TRANSLUCENT FROSTED BAR) -->
-  <header class="border-b border-[#e7e1d5] bg-[#fbf9f5]/85 sticky top-0 z-30 backdrop-blur-xl">
-    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
-      
-      <!-- Brand & Studio Title -->
-      <div class="flex items-center space-x-3.5">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f2ebe0] to-[#e5dcce] border border-[#d8cdbd] text-[#b85d19] flex items-center justify-center shrink-0 shadow-sm">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base font-bold tracking-tight text-[#1c1917]">
-              Totebags Studio
-            </h1>
-            <span class="text-[10px] tracking-wide uppercase font-semibold px-2 py-0.5 rounded-full bg-[#eee7dc] text-[#786c5e] border border-[#ddd3c3]">
-              Glenda Run
-            </span>
-          </div>
-          <p class="text-xs text-[#78716c]">Estructura de costos, inventario y control de ventas táctil</p>
-        </div>
+  <!-- BARRA DE NAVEGACIÓN Y ESTADO EN VIVO -->
+  <header class="max-w-[1500px] w-full mx-auto mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🎃</span>
+        <h1 class="text-2xl font-bold tracking-tight text-stone-900">Glenda's Halloween Run</h1>
+      </div>
+      <p class="text-stone-500 text-sm mt-0.5">Control de inventario, márgenes y ventas sincronizadas en tiempo real</p>
+    </div>
+
+    <div class="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end">
+      <!-- Indicador de sincronización en vivo -->
+      <div id="syncBadge" class="apple-glass px-3.5 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-amber-700 border border-amber-200">
+        <span class="w-2 h-2 rounded-full bg-amber-500 live-dot"></span>
+        <span id="syncText">Conectando a la nube...</span>
       </div>
 
-      <!-- MODULE SWITCHER (APPLE SEGMENTED CONTROL) -->
-      <div class="flex items-center segmented-track gap-1 self-start md:self-auto">
-        <button id="tabBtnInventory" onclick="switchModule('inventory')" class="btn-pressable segmented-pill-active px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-          <span>1. Inventario & Costos</span>
-          <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-[#f2ede4] text-[#786c5e] font-mono tabular-nums" id="tabBadgeInventory">59 uds</span>
+      <!-- Selector de Módulo -->
+      <div class="bg-[#ede7dc] p-1 rounded-xl flex items-center shadow-inner">
+        <button id="btnTabVentas" onclick="switchTab('ventas')" class="apple-btn px-4 py-1.5 rounded-lg text-xs font-semibold bg-white text-stone-900 shadow-sm">
+          Ventas en Vivo
         </button>
-
-        <button id="tabBtnSales" onclick="switchModule('sales')" class="btn-pressable segmented-pill-inactive px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span>2. Ventas en Vivo (+ / -)</span>
-          <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-[#e8f5e9] text-[#166534] font-mono tabular-nums" id="tabBadgeSales">0 vendidas</span>
+        <button id="btnTabInventario" onclick="switchTab('inventario')" class="apple-btn px-4 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-stone-900">
+          Inventario & Costos
         </button>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="flex items-center gap-2 flex-wrap">
-        
-        <div id="saveStatus" class="text-[11px] px-2.5 py-1 rounded-full bg-[#e8f5e9] text-[#166534] border border-[#c8e6c9] flex items-center gap-1.5 font-medium">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#2e7d32]"></span>
-          <span>Guardado local</span>
-        </div>
-
-        <button id="topAddButton" onclick="openNewItemModal()" class="btn-pressable px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#b85d19] hover:bg-[#9f4f13] text-white shadow-sm flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Nuevo Modelo</span>
-        </button>
-
-        <!-- Google Sheets Popover Dropdown -->
-        <div class="relative popover-container" id="sheetsDropdownContainer">
-          <button onclick="toggleSheetsDropdown(event)" class="btn-pressable px-3 py-1.5 text-xs font-medium rounded-lg bg-[#ffffff] hover:bg-[#f6f2ea] text-[#3c3630] border border-[#dcd3c4] shadow-xs flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-[#15803d]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/>
-            </svg>
-            <span>Exportar</span>
-            <svg class="w-3 h-3 text-[#78716c] ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          <div class="popover-menu absolute right-0 mt-1.5 w-64 apple-card rounded-xl p-1.5 shadow-xl z-50">
-            <button onclick="copyCurrentModuleForSheets()" class="btn-pressable w-full px-3 py-2 text-left text-xs rounded-lg hover:bg-[#f5f0e6] text-[#292524] flex items-start gap-2.5">
-              <span class="p-1 rounded bg-[#e8f5e9] text-[#166534] mt-0.5">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-              </span>
-              <div>
-                <p class="font-medium text-[#1c1917]" id="exportMenuCopyLabel">Copiar para Google Sheets</p>
-                <p class="text-[10px] text-[#78716c]">Pegar con Ctrl+V en una hoja vacía</p>
-              </div>
-            </button>
-            <button onclick="exportCurrentModuleCSV()" class="btn-pressable w-full px-3 py-2 text-left text-xs rounded-lg hover:bg-[#f5f0e6] text-[#292524] flex items-start gap-2.5">
-              <span class="p-1 rounded bg-[#e0f2fe] text-[#0369a1] mt-0.5">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              </span>
-              <div>
-                <p class="font-medium text-[#1c1917]" id="exportMenuCSVLabel">Descargar archivo .CSV</p>
-                <p class="text-[10px] text-[#78716c]">Codificación UTF-8 con BOM</p>
-              </div>
-            </button>
-            <button onclick="openInSheets()" class="btn-pressable w-full px-3 py-2 text-left text-xs rounded-lg hover:bg-[#f5f0e6] text-[#292524] flex items-start gap-2.5 border-t border-[#ece4d6] mt-1 pt-2">
-              <span class="p-1 rounded bg-[#fef3c7] text-[#b45309] mt-0.5">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-              </span>
-              <div>
-                <p class="font-medium text-[#1c1917]">Abrir sheets.new</p>
-                <p class="text-[10px] text-[#78716c]">Copia datos y abre Google Sheets</p>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <button onclick="resetSalesToZero()" title="Poner contador de ventas a cero" class="btn-pressable px-2.5 py-1.5 text-xs rounded-lg bg-[#ffffff] hover:bg-[#f6f2ea] text-[#78716c] hover:text-[#1c1917] border border-[#dcd3c4] flex items-center gap-1 shadow-xs">
-          <svg class="w-3.5 h-3.5 text-[#b45309]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span class="hidden sm:inline">Reiniciar Ventas</span>
-        </button>
-
       </div>
     </div>
   </header>
 
-  <!-- ========================================== -->
-  <!-- MODULE 1: INVENTARIO & COSTOS (PROYECCIÓN) -->
-  <!-- ========================================== -->
-  <main id="moduleInventory" class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+  <main class="max-w-[1500px] w-full mx-auto flex-1 flex flex-col gap-6">
 
-    <!-- FINANCIAL METRICS / RUN OVERVIEW -->
-    <section>
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <h2 class="text-xs uppercase tracking-wider text-[#78716c] font-semibold">Métricas Financieras Consolidadas del Run</h2>
-        </div>
-        <div class="text-[11px] text-[#78716c] tabular-nums">
-          Lote Total: <strong class="text-[#1c1917]" id="kpiTotalUnits">59</strong> totebags
-        </div>
+    <!-- MÉTRICAS EN VIVO -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="apple-card p-5 rounded-2xl">
+        <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Beneficio Actual (Real)</span>
+        <div id="metricBeneficioReal" class="text-2xl font-bold text-emerald-600 mt-1">RD$0.00</div>
+        <span class="text-xs text-stone-400 mt-1 block">Margen de las unidades vendidas</span>
       </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        
-        <!-- CARD 1: COSTO TOTAL -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden">
-          <div class="flex items-center justify-between text-xs text-[#78716c] mb-1.5">
-            <span class="font-medium">Inversión Total (Costo)</span>
-            <span class="w-2 h-2 rounded-full bg-[#e11d48]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#1c1917] tabular-nums tracking-tight" id="kpiTotalCost">RD$ 0.00</div>
-          <div class="mt-2 text-[11px] text-[#78716c] flex items-center justify-between pt-2 border-t border-[#f0eae1] tabular-nums">
-            <span>Costo medio por bolsa:</span>
-            <span id="kpiAvgCostUnit" class="text-[#292524] font-medium">RD$ 0.00</span>
-          </div>
-        </div>
-
-        <!-- CARD 2: VENTA TOTAL PROYECTADA -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden">
-          <div class="flex items-center justify-between text-xs text-[#78716c] mb-1.5">
-            <span class="font-medium">Venta Bruta Proyectada</span>
-            <span class="w-2 h-2 rounded-full bg-[#0284c7]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#1c1917] tabular-nums tracking-tight" id="kpiTotalRevenue">RD$ 0.00</div>
-          <div class="mt-2 text-[11px] text-[#78716c] flex items-center justify-between pt-2 border-t border-[#f0eae1] tabular-nums">
-            <span>PVP medio por bolsa:</span>
-            <span id="kpiAvgPriceUnit" class="text-[#292524] font-medium">RD$ 0.00</span>
-          </div>
-        </div>
-
-        <!-- CARD 3: BENEFICIO NETO TOTAL -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden border-[#bbf7d0] bg-gradient-to-b from-[#f0fdf4] to-[#ffffff]">
-          <div class="flex items-center justify-between text-xs text-[#15803d] mb-1.5">
-            <span class="font-semibold">Beneficio Neto Esperado</span>
-            <span class="w-2 h-2 rounded-full bg-[#16a34a]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#15803d] tabular-nums tracking-tight" id="kpiTotalProfit">RD$ 0.00</div>
-          <div class="mt-2 text-[11px] text-[#166534] flex items-center justify-between pt-2 border-t border-[#dcfce7] tabular-nums">
-            <span>Markup sobre costo:</span>
-            <span id="kpiMarkup" class="font-semibold">0.00x</span>
-          </div>
-        </div>
-
-        <!-- CARD 4: MARGEN GLOBAL & ROI -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden">
-          <div class="flex items-center justify-between text-xs text-[#78716c] mb-1.5">
-            <span class="font-medium">Margen Global Proyectado</span>
-            <span class="w-2 h-2 rounded-full bg-[#d97706]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#b45309] tabular-nums tracking-tight" id="kpiProfitMarginPercent">0.0%</div>
-          <div class="mt-2 text-[11px] text-[#78716c] flex items-center justify-between pt-2 border-t border-[#f0eae1] tabular-nums">
-            <span>ROI s/ Inversión:</span>
-            <span id="kpiROI" class="text-[#b45309] font-medium">+0.0%</span>
-          </div>
-        </div>
-
+      <div class="apple-card p-5 rounded-2xl">
+        <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Ingresos por Ventas</span>
+        <div id="metricIngresos" class="text-2xl font-bold text-stone-900 mt-1">RD$0.00</div>
+        <span class="text-xs text-stone-400 mt-1 block">Total cobrado en el evento</span>
       </div>
-
-      <!-- RATIO COSTO VS MARGEN -->
-      <div class="mt-3.5 apple-card-subtle rounded-xl p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-4">
-          <span class="flex items-center gap-1.5 text-[#57534e]">
-            <span class="w-2 h-2 rounded-full bg-[#e11d48]"></span>
-            Costo: <strong id="ratioCostLabel" class="text-[#1c1917] tabular-nums">0%</strong>
-          </span>
-          <span class="flex items-center gap-1.5 text-[#57534e]">
-            <span class="w-2 h-2 rounded-full bg-[#16a34a]"></span>
-            Beneficio Neto: <strong id="ratioProfitLabel" class="text-[#1c1917] tabular-nums">0%</strong>
-          </span>
-        </div>
-        <div class="sm:w-1/2 h-2 rounded-full bg-[#e6dfd3] overflow-hidden flex shadow-inner">
-          <div id="ratioCostBar" class="bg-[#e11d48] h-full transition-[width] duration-300 ease-out" style="width: 20%;"></div>
-          <div id="ratioProfitBar" class="bg-[#16a34a] h-full transition-[width] duration-300 ease-out" style="width: 80%;"></div>
-        </div>
+      <div class="apple-card p-5 rounded-2xl">
+        <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Unidades Vendidas</span>
+        <div id="metricUnidades" class="text-2xl font-bold text-[#b85d19] mt-1">0 <span class="text-sm font-normal text-stone-500">/ 59 total</span></div>
+        <span class="text-xs text-stone-400 mt-1 block" id="metricProgreso">0% del inventario vendido</span>
+      </div>
+      <div class="apple-card p-5 rounded-2xl">
+        <span class="text-xs font-medium text-stone-500 uppercase tracking-wider">Beneficio Máximo Potencial</span>
+        <div id="metricBeneficioPotencial" class="text-2xl font-bold text-stone-900 mt-1">RD$122,238.42</div>
+        <span class="text-xs text-stone-400 mt-1 block">Si se vende el 100% del run</span>
       </div>
     </section>
 
-    <!-- INVENTORY TABLE -->
-    <section class="space-y-3">
+    <!-- MÓDULO 1: VENTAS EN VIVO (SINCRONIZADO EN TIEMPO REAL) -->
+    <section id="moduleVentas" class="flex flex-col gap-4">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-sm font-bold text-[#1c1917]">
-            Catálogo & Estructura de Costos Base
-          </h2>
-          <p class="text-xs text-[#78716c]">Edita directamente cualquier celda para actualizar costos, envíos o precios</p>
+          <h2 class="text-lg font-semibold text-stone-900">Mostrador de Ventas en Vivo</h2>
+          <p class="text-xs text-stone-500">Toca [+] al vender una pieza. Se actualizará en la pantalla de todos los dispositivos al instante.</p>
         </div>
-        <button onclick="openNewItemModal()" class="btn-pressable px-2.5 py-1 text-xs rounded-lg bg-[#ffffff] hover:bg-[#f6f2ea] text-[#b85d19] border border-[#dfd6c6] shadow-2xs flex items-center gap-1 font-medium">
-          <span>+ Agregar Modelo</span>
+        <button onclick="resetSales()" class="text-xs text-stone-400 hover:text-rose-600 underline transition-colors">
+          Reiniciar conteo a cero
         </button>
       </div>
 
-      <div class="apple-card rounded-2xl overflow-hidden border border-[#dcd3c4]">
+      <div id="salesCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Renderizado dinámicamente con JS -->
+      </div>
+    </section>
+
+    <!-- MÓDULO 2: TABLA DE INVENTARIO, COSTOS Y MÁRGENES -->
+    <section id="moduleInventario" class="hidden flex-col gap-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-stone-900">Estructura de Costos & Márgenes</h2>
+          <p class="text-xs text-stone-500">Cálculo unitario de producción y porcentaje de margen por totebag</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="copyToSheets()" class="apple-btn apple-card px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 hover:text-stone-900 flex items-center gap-2">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            Copiar p/ Google Sheets
+          </button>
+          <button onclick="downloadCSV()" class="apple-btn apple-card px-3.5 py-2 rounded-xl text-xs font-semibold text-stone-700 hover:text-stone-900 flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Descargar CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="apple-card rounded-2xl overflow-hidden border border-[#ede7dc]">
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead>
-              <tr class="bg-[#f5f1e8] text-[#57534e] text-[11px] font-semibold tracking-wider border-b border-[#e5dcce]">
-                <th class="py-3 px-3 text-center w-14">Foto</th>
-                <th class="py-3 px-3 min-w-[180px]">Nombre de Artículo</th>
-                <th class="py-3 px-2 text-center w-20">Cantidad</th>
-                <th class="py-3 px-2 text-right w-28">P. Compra</th>
-                <th class="py-3 px-2 text-right w-24">Shipping</th>
-                <th class="py-3 px-2 text-right w-28">Costo Bordado</th>
-                <th class="py-3 px-3 text-right w-32 bg-[#faf6ee] text-[#9a3412] font-semibold">Costo Total</th>
-                <th class="py-3 px-2 text-right w-28">Precio Venta</th>
-                <th class="py-3 px-3 text-right w-36 bg-[#f0fdf4] text-[#166534] font-semibold">Margen</th>
-                <th class="py-3 px-2 text-center w-16">Acciones</th>
+          <table class="w-full text-left text-xs text-stone-700">
+            <thead class="bg-[#f7f4ee] text-stone-500 uppercase tracking-wider font-semibold border-b border-[#ede7dc]">
+              <tr>
+                <th class="p-3.5">Artículo</th>
+                <th class="p-3.5 text-center">Cant.</th>
+                <th class="p-3.5 text-right">P. Compra</th>
+                <th class="p-3.5 text-right">Shipping</th>
+                <th class="p-3.5 text-right">Bordado</th>
+                <th class="p-3.5 text-right font-bold text-stone-800">Costo Total</th>
+                <th class="p-3.5 text-right font-bold text-[#b85d19]">P. Venta</th>
+                <th class="p-3.5 text-right font-bold text-emerald-600">Margen %</th>
+                <th class="p-3.5 text-right">Beneficio/u</th>
+                <th class="p-3.5 text-right font-bold">Beneficio Total</th>
               </tr>
             </thead>
-            <tbody id="inventoryTableBody" class="divide-y divide-[#ece5d8]">
-              <!-- Populated by JS -->
+            <tbody id="inventoryTableBody" class="divide-y divide-[#ede7dc]">
+              <!-- Filas renderizadas por JS -->
             </tbody>
-            <tfoot class="bg-[#f5f1e8] border-t border-[#ded5c5] text-[11px] font-semibold text-[#292524]">
+            <tfoot class="bg-[#f7f4ee] font-bold text-stone-900 border-t-2 border-[#ede7dc]">
               <tr>
-                <td class="py-3 px-3 text-center font-bold text-[#78716c]">TOTAL</td>
-                <td class="py-3 px-3 font-medium text-[#44403c]">Resumen consolidado del run</td>
-                <td class="py-3 px-2 text-center text-[#b85d19] font-bold tabular-nums" id="footTotalQty">0</td>
-                <td class="py-3 px-2 text-right tabular-nums text-[#57534e]" id="footTotalBuy">RD$ 0.00</td>
-                <td class="py-3 px-2 text-right tabular-nums text-[#57534e]" id="footTotalShip">RD$ 0.00</td>
-                <td class="py-3 px-2 text-right tabular-nums text-[#57534e]" id="footTotalEmb">RD$ 0.00</td>
-                <td class="py-3 px-3 text-right tabular-nums text-[#9a3412] font-bold bg-[#faf6ee]" id="footTotalCost">RD$ 0.00</td>
-                <td class="py-3 px-2 text-right tabular-nums text-[#0369a1] font-bold" id="footTotalRevenue">RD$ 0.00</td>
-                <td class="py-3 px-3 text-right tabular-nums text-[#15803d] font-bold bg-[#f0fdf4]" id="footTotalProfit">RD$ 0.00</td>
-                <td class="py-3 px-2"></td>
+                <td class="p-3.5">TOTALES DEL RUN</td>
+                <td class="p-3.5 text-center" id="footTotalQty">59</td>
+                <td class="p-3.5 text-right">-</td>
+                <td class="p-3.5 text-right">RD$0.00</td>
+                <td class="p-3.5 text-right" id="footTotalBordado">-</td>
+                <td class="p-3.5 text-right" id="footTotalCost">-</td>
+                <td class="p-3.5 text-right text-[#b85d19]" id="footTotalRevenue">-</td>
+                <td class="p-3.5 text-right text-emerald-600" id="footAvgMargin">-</td>
+                <td class="p-3.5 text-right">-</td>
+                <td class="p-3.5 text-right text-emerald-600" id="footTotalProfit">-</td>
               </tr>
             </tfoot>
           </table>
@@ -515,1093 +186,354 @@
 
   </main>
 
-  <!-- ======================================================== -->
-  <!-- MODULE 2: DIARIO DE VENTAS EN VIVO CON PULSADORES (+ / -) -->
-  <!-- ======================================================== -->
-  <main id="moduleSales" class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6 hidden">
+  <footer class="max-w-[1500px] w-full mx-auto mt-10 pt-4 border-t border-[#ede7dc] flex flex-col sm:flex-row items-center justify-between text-xs text-stone-400 gap-2">
+    <span>🎃 Halloween Event Edition • Conectado con Firebase Cloud Firestore</span>
+    <span>Exportación lista para Google Sheets</span>
+  </footer>
 
-    <!-- REALIZED SALES KPIS -->
-    <section>
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <h2 class="text-xs uppercase tracking-wider text-[#78716c] font-semibold">Beneficio de Ventas Realizadas (Run en Vivo)</h2>
-          <p class="text-xs text-[#8c827a]">Usa los pulsadores (+) y (-) en cada totebag para registrar ventas en tiempo real</p>
-        </div>
-        <div class="text-[11px] text-[#78716c] tabular-nums">
-          Progreso de venta: <strong class="text-[#1c1917]" id="salesKpiQtySold">0 de 59</strong> uds
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        
-        <!-- CARD 1: VENTAS COBRADAS -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden">
-          <div class="flex items-center justify-between text-xs text-[#78716c] mb-1.5">
-            <span class="font-medium">Total Cobrado (Ingreso Real)</span>
-            <span class="w-2 h-2 rounded-full bg-[#0284c7]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#0369a1] tabular-nums tracking-tight" id="salesKpiRevenue">RD$ 0.00</div>
-          <div class="mt-2 text-[11px] text-[#78716c] flex items-center justify-between pt-2 border-t border-[#f0eae1] tabular-nums">
-            <span>Stock restante:</span>
-            <span id="salesKpiStockLeft" class="text-[#292524] font-medium">59 uds</span>
-          </div>
-        </div>
-
-        <!-- CARD 2: COSTO DE LO VENDIDO -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden">
-          <div class="flex items-center justify-between text-xs text-[#78716c] mb-1.5">
-            <span class="font-medium">Costo de lo Vendido (COGS)</span>
-            <span class="w-2 h-2 rounded-full bg-[#e11d48]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#be123c] tabular-nums tracking-tight" id="salesKpiCost">RD$ 0.00</div>
-          <div class="mt-2 text-[11px] text-[#78716c] flex items-center justify-between pt-2 border-t border-[#f0eae1] tabular-nums">
-            <span>Inversión total run:</span>
-            <span id="salesKpiTotalRunCostRef" class="text-[#991b1b] font-medium">RD$ 24,486.18</span>
-          </div>
-        </div>
-
-        <!-- CARD 3: BENEFICIO REALIZADO -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden border-[#bbf7d0] bg-gradient-to-b from-[#f0fdf4] to-[#ffffff]">
-          <div class="flex items-center justify-between text-xs text-[#15803d] mb-1.5">
-            <span class="font-semibold">Beneficio Neto Realizado</span>
-            <span class="w-2 h-2 rounded-full bg-[#16a34a]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#15803d] tabular-nums tracking-tight" id="salesKpiProfit">RD$ 0.00</div>
-          <div class="mt-2 text-[11px] text-[#166534] flex items-center justify-between pt-2 border-t border-[#dcfce7] tabular-nums">
-            <span>Margen real cobrado:</span>
-            <span id="salesKpiMarginPct" class="font-semibold">0.0%</span>
-          </div>
-        </div>
-
-        <!-- CARD 4: PROGRESO DEL RUN -->
-        <div class="apple-card rounded-2xl p-4 relative overflow-hidden">
-          <div class="flex items-center justify-between text-xs text-[#78716c] mb-1.5">
-            <span class="font-medium">Meta del Run Alcanzada</span>
-            <span class="w-2 h-2 rounded-full bg-[#d97706]"></span>
-          </div>
-          <div class="text-2xl font-bold text-[#b45309] tabular-nums tracking-tight" id="salesKpiProgressPct">0.0%</div>
-          <div class="mt-2 text-[11px] text-[#78716c] flex items-center justify-between pt-2 border-t border-[#f0eae1] tabular-nums">
-            <span>Meta esperada:</span>
-            <span id="salesKpiTargetProfitRef" class="text-[#b45309] font-medium">RD$ 102,923.82</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- PROGRESS AGAINST RUN TARGET -->
-      <div class="mt-3.5 apple-card-subtle rounded-xl p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-4">
-          <span class="flex items-center gap-1.5 text-[#57534e]">
-            <span class="w-2 h-2 rounded-full bg-[#16a34a]"></span>
-            Beneficio Realizado: <strong id="salesProgressLabelProfit" class="text-[#15803d] tabular-nums">RD$ 0.00</strong>
-          </span>
-          <span class="flex items-center gap-1.5 text-[#78716c]">
-            de <span id="salesProgressLabelTarget" class="text-[#1c1917] font-medium ml-1">RD$ 102,923.82 (Meta Proyectada)</span>
-          </span>
-        </div>
-        <div class="sm:w-1/2 h-2 rounded-full bg-[#e6dfd3] overflow-hidden flex shadow-inner">
-          <div id="salesRunProgressBar" class="bg-gradient-to-r from-[#b85d19] to-[#15803d] h-full transition-[width] duration-300 ease-out" style="width: 0%;"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- INTERACTIVE STEPPER SALES TABLE (FULL WIDTH, WARM BEIGE STUDIO LOOK) -->
-    <section class="space-y-3">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-sm font-bold text-[#1c1917] flex items-center gap-2">
-            Control de Ventas por Totebag (+ / -)
-          </h2>
-          <p class="text-xs text-[#78716c]">Pulsa (+) al vender una totebag o (-) para corregir. El centro muestra las vendidas y el total en inventario.</p>
-        </div>
-        <button onclick="copySalesLogForSheets()" class="btn-pressable px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#15803d] hover:bg-[#166534] text-white flex items-center gap-1.5 shadow-sm">
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-          Copiar Ventas para Sheets
-        </button>
-      </div>
-
-      <!-- SALES STEPPER TABLE / FULL WIDTH -->
-      <div class="apple-card rounded-2xl overflow-hidden border border-[#dcd3c4]">
-        <div class="w-full overflow-x-auto">
-          <table class="w-full text-left text-xs table-auto">
-            <thead>
-              <tr class="bg-[#f5f1e8] text-[#57534e] text-[11px] font-semibold tracking-wider border-b border-[#e5dcce]">
-                <th class="py-3 px-3 text-center w-14">Foto</th>
-                <th class="py-3 px-3">Nombre de Artículo</th>
-                <th class="py-3 px-3 text-center w-56 bg-[#faf6ee] text-[#b85d19] font-bold">
-                  Ventas & Inventario (+ / -)
-                </th>
-                <th class="py-3 px-3 text-right w-28">PVP Unit.</th>
-                <th class="py-3 px-3 text-right w-28">Costo Unit.</th>
-                <th class="py-3 px-3 text-right w-32 text-[#0369a1] font-semibold">Total Cobrado</th>
-                <th class="py-3 px-3 text-right w-32 text-[#be123c]">Total Costo</th>
-                <th class="py-3 px-3 text-right w-36 bg-[#f0fdf4] text-[#15803d] font-bold">Beneficio Real</th>
-                <th class="py-3 px-3 text-center w-36">Estado Stock</th>
-              </tr>
-            </thead>
-            <tbody id="salesStepperTableBody" class="divide-y divide-[#ece5d8]">
-              <!-- Dynamically populated rows with steppers -->
-            </tbody>
-            <tfoot class="bg-[#f5f1e8] border-t border-[#ded5c5] text-[11px] font-semibold text-[#292524]">
-              <tr>
-                <td class="py-3 px-3 text-center font-bold text-[#78716c]">TOTAL</td>
-                <td class="py-3 px-3 font-medium text-[#44403c]">Ventas Realizadas del Run</td>
-                <td class="py-3 px-3 text-center text-[#b85d19] font-bold tabular-nums" id="salesFootStepperTotal">0 vendidas / 59 total</td>
-                <td class="py-3 px-3 text-right tabular-nums text-[#78716c]">-</td>
-                <td class="py-3 px-3 text-right tabular-nums text-[#78716c]">-</td>
-                <td class="py-3 px-3 text-right tabular-nums text-[#0369a1] font-bold" id="salesFootRevenue">RD$ 0.00</td>
-                <td class="py-3 px-3 text-right tabular-nums text-[#be123c] font-bold" id="salesFootCost">RD$ 0.00</td>
-                <td class="py-3 px-3 text-right tabular-nums text-[#15803d] font-bold bg-[#f0fdf4]" id="salesFootProfit">RD$ 0.00</td>
-                <td class="py-3 px-3 text-center text-[#44403c] font-medium" id="salesFootStockStatus">59 disponibles</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ========================================== -->
-  <!-- MODALS                                     -->
-  <!-- ========================================== -->
-
-  <!-- LIGHTBOX IMAGE MODAL -->
-  <div id="imageModal" class="dialog-backdrop fixed inset-0 z-50 flex items-center justify-center p-4" onclick="closeImageModal()">
-    <div class="dialog-panel rounded-3xl overflow-hidden p-3 shadow-2xl max-w-lg w-full" onclick="event.stopPropagation()">
-      <button onclick="closeImageModal()" class="btn-pressable absolute top-4 right-4 z-10 w-7 h-7 rounded-full bg-[#1c1917]/70 text-white flex items-center justify-center text-xs">
-        ✕
-      </button>
-      <img id="modalImg" src="" alt="Vista previa de Tote Bag" class="w-full h-auto max-h-[70vh] object-contain rounded-2xl bg-[#f5f1e8]">
-      <div class="p-3 text-center">
-        <h4 id="modalImgTitle" class="text-sm font-bold text-[#1c1917]"></h4>
-        <p id="modalImgSubtitle" class="text-xs text-[#b85d19] font-mono mt-0.5 tabular-nums"></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ADD / EDIT INVENTORY ITEM MODAL -->
-  <div id="itemModal" class="dialog-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="dialog-panel rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4" onclick="event.stopPropagation()">
-      <div class="flex items-center justify-between border-b border-[#e7e1d5] pb-3">
-        <h3 class="text-sm font-bold text-[#1c1917]" id="modalFormTitle">Agregar Artículo</h3>
-        <button onclick="closeItemModal()" class="btn-pressable text-[#78716c] hover:text-[#1c1917] text-sm">✕</button>
-      </div>
-
-      <form id="itemForm" onsubmit="handleItemFormSubmit(event)" class="space-y-3.5 text-xs">
-        <input type="hidden" id="formItemId">
-        <div>
-          <label class="block font-medium text-[#44403c] mb-1">Nombre de Artículo *</label>
-          <input type="text" id="formName" required placeholder="Ej. Tote Bag Studio - Halloween" class="table-cell-input w-full">
-        </div>
-
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label class="block font-medium text-[#44403c] mb-1">Cantidad *</label>
-            <input type="number" id="formQty" required min="1" step="1" value="1" class="table-cell-input w-full">
-          </div>
-          <div>
-            <label class="block font-medium text-[#44403c] mb-1">P. Compra Unit. (RD$) *</label>
-            <input type="number" id="formBuyPrice" required min="0" step="0.01" value="0" class="table-cell-input w-full">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label class="block font-medium text-[#44403c] mb-1">Shipping Unit. (RD$)</label>
-            <input type="number" id="formShipping" min="0" step="0.01" value="0" class="table-cell-input w-full">
-          </div>
-          <div>
-            <label class="block font-medium text-[#44403c] mb-1">Costo Bordado Unit. (RD$) *</label>
-            <input type="number" id="formEmbroidery" required min="0" step="0.01" value="250" class="table-cell-input w-full">
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-medium text-[#44403c] mb-1">Precio de Venta Unit. (RD$) *</label>
-          <input type="number" id="formSellPrice" required min="0" step="0.01" value="1895" class="table-cell-input w-full">
-        </div>
-
-        <div>
-          <label class="block font-medium text-[#44403c] mb-1">Foto o Archivo</label>
-          <div class="flex gap-2">
-            <input type="text" id="formImgUrl" placeholder="Ruta de imagen (Ej. totebagStudio.jpeg)" class="table-cell-input flex-1">
-            <label class="btn-pressable px-2.5 py-1.5 bg-[#f0eae1] hover:bg-[#e7dfd3] text-[#44403c] rounded border border-[#d8cdbd] cursor-pointer flex items-center justify-center shrink-0">
-              <span>Subir</span>
-              <input type="file" id="formImgFile" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-            </label>
-          </div>
-          <div id="imagePreviewContainer" class="mt-2 hidden flex items-center gap-2">
-            <img id="formImgPreview" src="" class="w-8 h-8 object-cover rounded border border-[#d8cdbd]">
-            <span class="text-[10px] text-[#78716c]">Imagen lista</span>
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-3 border-t border-[#e7e1d5]">
-          <button type="button" onclick="closeItemModal()" class="btn-pressable px-3 py-1.5 rounded-lg bg-[#f0eae1] text-[#44403c] hover:bg-[#e7dfd3]">Cancelar</button>
-          <button type="submit" class="btn-pressable px-3.5 py-1.5 rounded-lg bg-[#b85d19] hover:bg-[#9f4f13] text-white font-medium shadow-sm">Guardar Artículo</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- APPLE STYLE FLOATING TOAST -->
-  <div id="sonnerToast" class="apple-toast fixed bottom-5 right-5 z-50 apple-glass text-[#1c1917] px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-medium border border-[#ded5c5]">
-    <span id="toastIcon" class="text-sm">📋</span>
-    <span id="toastMsg">Acción completada</span>
-  </div>
-
+  <!-- SCRIPT DE FIREBASE Y LÓGICA -->
   <script>
-    // INITIAL INVENTORY DATA
-    const DEFAULT_INVENTORY = [
+    // 1. Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAh7YjCBv4vrqxWjfe14gpgre5O_CWGgEc",
+      authDomain: "gs-halloween-event.firebaseapp.com",
+      projectId: "gs-halloween-event",
+      storageBucket: "gs-halloween-event.firebasestorage.app",
+      messagingSenderId: "666599318292",
+      appId: "1:666599318292:web:7dbe5e06bdcd6388add801",
+      measurementId: "G-JVZNJX4Y56"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const eventDoc = db.collection('events').doc('halloween2026');
+
+    // Datos maestros del inventario
+    const products = [
       {
-        id: "item-1",
-        image: "TotebagMini.jpeg",
-        name: "Objeto1 - Mini Totebag - 1 of 1",
+        id: "mini",
+        name: "Objeto1 - Mini Totebag",
+        tag: "1 of 1 • Muestra",
         qty: 1,
-        buyPrice: 0,
-        isSample: true,
-        shipping: 0,
-        embroideryCost: 150.00,
-        sellPrice: 4900.00
+        buyPrice: 0.00,
+        shipping: 0.00,
+        embroidery: 150.00,
+        sellPrice: 4900.00,
+        img: "TotebagMini.jpeg"
       },
       {
-        id: "item-2",
-        image: "WhatsApp Image 2026-10-22 at 19.31.29.jpeg",
+        id: "totenote",
         name: "ToteNote",
+        tag: "Colección regular",
         qty: 40,
         buyPrice: 85.55,
-        isSample: false,
-        shipping: 0,
-        embroideryCost: 250.00,
-        sellPrice: 1895.00
+        shipping: 0.00,
+        embroidery: 250.00,
+        sellPrice: 1895.00,
+        img: "totebagStudio.jpeg"
       },
       {
-        id: "item-3",
-        image: "totebagStudio.jpeg",
-        name: "Objeto1 - Black & White (limited edition)",
+        id: "bw_ltd",
+        name: "Objeto1 - Black & White (Ltd)",
+        tag: "Limited edition",
         qty: 6,
         buyPrice: 549.03,
-        isSample: false,
-        shipping: 0,
-        embroideryCost: 250.00,
-        sellPrice: 2595.00
+        shipping: 0.00,
+        embroidery: 250.00,
+        sellPrice: 2595.00,
+        img: "WhatsApp Image 2026-10-22 at 19.31.29.jpeg"
       },
       {
-        id: "item-4",
-        image: "totebagStudio.jpeg",
-        name: "Objeto1 - Black & White (limited edition) (dume)",
+        id: "bw_dume",
+        name: "Objeto1 - Black & White (Dume)",
+        tag: "Limited edition dume",
         qty: 12,
         buyPrice: 260.00,
-        isSample: false,
-        shipping: 0,
-        embroideryCost: 250.00,
-        sellPrice: 2595.00
+        shipping: 0.00,
+        embroidery: 250.00,
+        sellPrice: 2595.00,
+        img: "WhatsApp Image 2026-10-22 at 19.31.29.jpeg"
       }
     ];
 
-    const STORAGE_KEY_INV = "GLENDA_TOTEBAGS_INVENTORY_V5";
-    const STORAGE_KEY_SALES_COUNTS = "GLENDA_TOTEBAGS_SALES_COUNTS_V5";
+    // Estado local sincronizado
+    let salesState = {
+      mini: 0,
+      totenote: 0,
+      bw_ltd: 0,
+      bw_dume: 0
+    };
 
-    let inventory = [];
-    let salesCounts = {};
-    let currentModule = "inventory";
-    let toastTimeout = null;
+    // Formateador RD$
+    const formatRD = (val) => "RD$" + Number(val).toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    function formatRD(num) {
-      if (isNaN(num)) return "RD$ 0.00";
-      return "RD$ " + Number(num).toLocaleString('es-DO', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    }
+    // Escuchar cambios de Firestore en TIEMPO REAL
+    eventDoc.onSnapshot((doc) => {
+      const badge = document.getElementById('syncBadge');
+      const text = document.getElementById('syncText');
+      badge.className = "apple-glass px-3.5 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-emerald-800 border border-emerald-300";
+      badge.querySelector('.live-dot').className = "w-2 h-2 rounded-full bg-emerald-500 live-dot";
+      text.innerText = "Sincronizado en vivo";
 
-    function loadAll() {
-      const savedInv = localStorage.getItem(STORAGE_KEY_INV);
-      if (savedInv) {
-        try { inventory = JSON.parse(savedInv); } catch(e) { inventory = JSON.parse(JSON.stringify(DEFAULT_INVENTORY)); }
+      if (doc.exists && doc.data().sales) {
+        salesState = { ...salesState, ...doc.data().sales };
       } else {
-        inventory = JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
+        eventDoc.set({ sales: salesState }, { merge: true });
       }
-
-      const savedSales = localStorage.getItem(STORAGE_KEY_SALES_COUNTS);
-      if (savedSales) {
-        try { salesCounts = JSON.parse(savedSales); } catch(e) { salesCounts = {}; }
-      } else {
-        salesCounts = {};
-      }
-
-      inventory.forEach(item => {
-        if (typeof salesCounts[item.id] !== 'number') {
-          salesCounts[item.id] = 0;
-        }
-      });
-
       renderAll();
+    }, (error) => {
+      console.error("Firestore error:", error);
+      const badge = document.getElementById('syncBadge');
+      const text = document.getElementById('syncText');
+      badge.className = "apple-glass px-3.5 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium text-rose-700 border border-rose-200";
+      badge.querySelector('.live-dot').className = "w-2 h-2 rounded-full bg-rose-500";
+      text.innerText = "Modo sin conexión";
+      renderAll();
+    });
+
+    // Cambiar ventas con actualización optimista y persistencia en Firestore
+    window.updateSale = async function(id, delta) {
+      const prod = products.find(p => p.id === id);
+      const current = salesState[id] || 0;
+      const next = Math.max(0, Math.min(prod.qty, current + delta));
+      if (next === current) return;
+
+      salesState[id] = next;
+      renderAll();
+
+      try {
+        await eventDoc.set({
+          sales: { [id]: next },
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Error al guardar en Firestore:", err);
+      }
+    };
+
+    // Reiniciar ventas
+    window.resetSales = async function() {
+      if (!confirm("¿Deseas reiniciar todas las ventas a 0 en todos los dispositivos?")) return;
+      const resetMap = { mini: 0, totenote: 0, bw_ltd: 0, bw_dume: 0 };
+      salesState = resetMap;
+      renderAll();
+      await eventDoc.set({ sales: resetMap });
+    };
+
+    // Renderizar tarjetas de ventas
+    function renderSalesCards() {
+      const container = document.getElementById('salesCardsGrid');
+      container.innerHTML = products.map(p => {
+        const sold = salesState[p.id] || 0;
+        const available = p.qty - sold;
+        const isSoldOut = available === 0;
+
+        return `
+          <div class="apple-card rounded-2xl p-4 flex flex-col justify-between border ${isSoldOut ? 'border-amber-200 bg-amber-50/20' : 'border-[#ede7dc]'}">
+            <div>
+              <div class="relative h-44 w-full rounded-xl overflow-hidden bg-stone-100 mb-3 border border-stone-200/50">
+                <img src="${p.img}" alt="${p.name}" class="w-full h-full object-cover">
+                <span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${isSoldOut ? 'bg-amber-600 text-white' : 'apple-glass text-stone-800'}">
+                  ${isSoldOut ? 'AGOTADO' : `${available} disponibles`}
+                </span>
+              </div>
+              <h3 class="font-bold text-stone-900 text-sm leading-tight">${p.name}</h3>
+              <p class="text-[11px] text-stone-400 mt-0.5">${p.tag}</p>
+              <div class="mt-2 flex items-baseline justify-between">
+                <span class="text-xs text-stone-500">Precio:</span>
+                <span class="text-base font-bold text-[#b85d19]">${formatRD(p.sellPrice)}</span>
+              </div>
+            </div>
+
+            <!-- Stepper interactivo grande -->
+            <div class="mt-4 pt-3 border-t border-stone-100">
+              <div class="flex items-center justify-between bg-[#f5f1ea] p-1.5 rounded-xl">
+                <button onclick="updateSale('${p.id}', -1)" ${sold === 0 ? 'disabled' : ''} class="apple-btn w-9 h-9 rounded-lg bg-white shadow-sm flex items-center justify-center font-bold text-base text-stone-700 disabled:opacity-30 disabled:pointer-events-none active:bg-stone-100">
+                  -
+                </button>
+                <div class="text-center px-2">
+                  <div class="text-base font-black text-stone-900">${sold} <span class="text-xs font-normal text-stone-400">/ ${p.qty}</span></div>
+                  <div class="text-[10px] text-stone-500 font-medium tracking-tight">vendidas</div>
+                </div>
+                <button onclick="updateSale('${p.id}', 1)" ${sold >= p.qty ? 'disabled' : ''} class="apple-btn w-9 h-9 rounded-lg bg-stone-900 text-white shadow-sm flex items-center justify-center font-bold text-base disabled:opacity-30 disabled:pointer-events-none active:bg-stone-800">
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
-    function saveAll() {
-      localStorage.setItem(STORAGE_KEY_INV, JSON.stringify(inventory));
-      localStorage.setItem(STORAGE_KEY_SALES_COUNTS, JSON.stringify(salesCounts));
-      const statusEl = document.getElementById("saveStatus");
-      if (statusEl) {
-        statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-[#2e7d32]"></span><span>Guardado local</span>`;
-      }
+    // Renderizar tabla de inventario
+    function renderInventoryTable() {
+      const tbody = document.getElementById('inventoryTableBody');
+      let totalBordado = 0;
+      let totalCost = 0;
+      let totalRevenue = 0;
+      let totalProfit = 0;
+
+      tbody.innerHTML = products.map(p => {
+        const totalUnitCost = p.buyPrice + p.shipping + p.embroidery;
+        const profitPerUnit = p.sellPrice - totalUnitCost;
+        const marginPct = (profitPerUnit / p.sellPrice) * 100;
+        const totalLineProfit = profitPerUnit * p.qty;
+
+        totalBordado += p.embroidery * p.qty;
+        totalCost += totalUnitCost * p.qty;
+        totalRevenue += p.sellPrice * p.qty;
+        totalProfit += totalLineProfit;
+
+        return `
+          <tr class="hover:bg-[#faf7f2] transition-colors">
+            <td class="p-3.5 font-semibold text-stone-900">
+              ${p.name}
+              <div class="text-[10px] font-normal text-stone-400">${p.tag}</div>
+            </td>
+            <td class="p-3.5 text-center font-bold text-stone-800">${p.qty}</td>
+            <td class="p-3.5 text-right">${p.buyPrice === 0 ? '<span class="text-stone-400 italic">Muestra</span>' : formatRD(p.buyPrice)}</td>
+            <td class="p-3.5 text-right">${formatRD(p.shipping)}</td>
+            <td class="p-3.5 text-right">${formatRD(p.embroidery)}</td>
+            <td class="p-3.5 text-right font-bold text-stone-900">${formatRD(totalUnitCost)}</td>
+            <td class="p-3.5 text-right font-bold text-[#b85d19]">${formatRD(p.sellPrice)}</td>
+            <td class="p-3.5 text-right font-bold text-emerald-600">${marginPct.toFixed(1)}%</td>
+            <td class="p-3.5 text-right">${formatRD(profitPerUnit)}</td>
+            <td class="p-3.5 text-right font-bold text-stone-900">${formatRD(totalLineProfit)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('footTotalBordado').innerText = formatRD(totalBordado);
+      document.getElementById('footTotalCost').innerText = formatRD(totalCost);
+      document.getElementById('footTotalRevenue').innerText = formatRD(totalRevenue);
+      document.getElementById('footTotalProfit').innerText = formatRD(totalProfit);
+      document.getElementById('footAvgMargin').innerText = ((totalProfit / totalRevenue) * 100).toFixed(1) + "%";
     }
 
-    function resetSalesToZero() {
-      if (confirm("¿Reiniciar el contador de ventas a cero (0) para todas las totebags?")) {
-        inventory.forEach(item => {
-          salesCounts[item.id] = 0;
-        });
-        saveAll();
-        renderAll();
-        showToast("Ventas reiniciadas a 0", "🔄");
-      }
-    }
+    // Métricas en cabecera
+    function renderMetrics() {
+      let revenueActual = 0;
+      let profitActual = 0;
+      let totalSold = 0;
 
-    // MODULE SWITCHER
-    function switchModule(mod) {
-      currentModule = mod;
-      const invEl = document.getElementById("moduleInventory");
-      const salesEl = document.getElementById("moduleSales");
-      const tabInv = document.getElementById("tabBtnInventory");
-      const tabSales = document.getElementById("tabBtnSales");
-      const topAddBtn = document.getElementById("topAddButton");
-      const copyLabel = document.getElementById("exportMenuCopyLabel");
-      const csvLabel = document.getElementById("exportMenuCSVLabel");
+      products.forEach(p => {
+        const sold = salesState[p.id] || 0;
+        const totalUnitCost = p.buyPrice + p.shipping + p.embroidery;
+        revenueActual += sold * p.sellPrice;
+        profitActual += sold * (p.sellPrice - totalUnitCost);
+        totalSold += sold;
+      });
 
-      if (mod === "inventory") {
-        invEl.classList.remove("hidden");
-        salesEl.classList.add("hidden");
-        tabInv.className = "btn-pressable segmented-pill-active px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all";
-        tabSales.className = "btn-pressable segmented-pill-inactive px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all";
-        topAddBtn.classList.remove("hidden");
-        copyLabel.innerText = "Copiar Inventario para Sheets";
-        csvLabel.innerText = "Descargar CSV Inventario";
-      } else {
-        invEl.classList.add("hidden");
-        salesEl.classList.remove("hidden");
-        tabInv.className = "btn-pressable segmented-pill-inactive px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all";
-        tabSales.className = "btn-pressable segmented-pill-active px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all";
-        topAddBtn.classList.add("hidden");
-        copyLabel.innerText = "Copiar Ventas para Sheets";
-        csvLabel.innerText = "Descargar CSV Ventas";
-      }
+      document.getElementById('metricBeneficioReal').innerText = formatRD(profitActual);
+      document.getElementById('metricIngresos').innerText = formatRD(revenueActual);
+      document.getElementById('metricUnidades').innerHTML = `${totalSold} <span class="text-sm font-normal text-stone-500">/ 59 total</span>`;
+      document.getElementById('metricProgreso').innerText = `${((totalSold / 59) * 100).toFixed(0)}% del inventario vendido`;
     }
 
     function renderAll() {
-      renderInventory();
-      renderSalesSteppers();
+      renderSalesCards();
+      renderInventoryTable();
+      renderMetrics();
+      lucide.createIcons();
     }
 
-    // ==========================================
-    // RENDER INVENTORY TABLE
-    // ==========================================
-    function renderInventory() {
-      const tbody = document.getElementById("inventoryTableBody");
-      tbody.innerHTML = "";
+    // Pestañas
+    window.switchTab = function(tab) {
+      const v = document.getElementById('moduleVentas');
+      const i = document.getElementById('moduleInventario');
+      const btnV = document.getElementById('btnTabVentas');
+      const btnI = document.getElementById('btnTabInventario');
 
-      let totalUnits = 0;
-      let sumBuyTotal = 0;
-      let sumShipTotal = 0;
-      let sumEmbTotal = 0;
-      let sumCostTotal = 0;
-      let sumRevenueTotal = 0;
-      let sumProfitTotal = 0;
-
-      inventory.forEach((item, index) => {
-        const qty = Number(item.qty) || 0;
-        const buyPrice = Number(item.buyPrice) || 0;
-        const shipping = Number(item.shipping) || 0;
-        const embroideryCost = Number(item.embroideryCost) || 0;
-        const sellPrice = Number(item.sellPrice) || 0;
-
-        const totalCostUnit = buyPrice + shipping + embroideryCost;
-        const profitUnit = sellPrice - totalCostUnit;
-        const marginPercent = sellPrice > 0 ? (profitUnit / sellPrice) * 100 : 0;
-
-        const totalRowCost = totalCostUnit * qty;
-        const totalRowRevenue = sellPrice * qty;
-        const totalRowProfit = profitUnit * qty;
-
-        totalUnits += qty;
-        sumBuyTotal += buyPrice * qty;
-        sumShipTotal += shipping * qty;
-        sumEmbTotal += embroideryCost * qty;
-        sumCostTotal += totalRowCost;
-        sumRevenueTotal += totalRowRevenue;
-        sumProfitTotal += totalRowProfit;
-
-        const tr = document.createElement("tr");
-        tr.className = "row-hover";
-
-        tr.innerHTML = `
-          <td class="py-2.5 px-3 text-center">
-            <button onclick="openImageModal('${item.image || ''}', '${escapeHtml(item.name)}', '${formatRD(sellPrice)}')" 
-                    class="btn-pressable group/img inline-block focus:outline-none" title="Ampliar imagen">
-              <img src="${item.image || 'totebagStudio.jpeg'}" 
-                   alt="${escapeHtml(item.name)}" 
-                   onerror="this.src='totebagStudio.jpeg'"
-                   class="w-10 h-10 object-cover rounded-xl border border-[#d8cdbd] group-hover/img:border-[#b85d19] shadow-xs">
-            </button>
-          </td>
-
-          <td class="py-2.5 px-3">
-            <div class="flex flex-col">
-              <input type="text" value="${escapeHtml(item.name)}" 
-                     onchange="updateItemField(${index}, 'name', this.value)" 
-                     class="font-semibold text-[#1c1917] bg-transparent border-b border-transparent hover:border-[#d0c6b6] focus:border-[#b85d19] focus:bg-[#faf7f2] px-1 py-0.5 rounded transition-colors w-full">
-              <div class="text-[10px] text-[#78716c] flex items-center gap-1 mt-0.5">
-                ${item.isSample ? '<span class="text-[#b45309] bg-[#fef3c7] px-1.5 rounded-full border border-[#fde68a]">Muestra (1 of 1)</span>' : ''}
-                <span>${item.id}</span>
-              </div>
-            </div>
-          </td>
-
-          <td class="py-2.5 px-2 text-center">
-            <input type="number" min="0" step="1" value="${qty}" 
-                   onchange="updateItemField(${index}, 'qty', this.value)" 
-                   class="table-cell-input text-center font-bold text-[#b85d19] w-16 mx-auto">
-          </td>
-
-          <td class="py-2.5 px-2 text-right">
-            <input type="number" min="0" step="0.01" value="${buyPrice}" 
-                   onchange="updateItemField(${index}, 'buyPrice', this.value)" 
-                   class="table-cell-input text-right w-24 text-[#292524]">
-          </td>
-
-          <td class="py-2.5 px-2 text-right">
-            <input type="number" min="0" step="0.01" value="${shipping}" 
-                   onchange="updateItemField(${index}, 'shipping', this.value)" 
-                   class="table-cell-input text-right w-20 text-[#57534e]">
-          </td>
-
-          <td class="py-2.5 px-2 text-right">
-            <input type="number" min="0" step="0.01" value="${embroideryCost}" 
-                   onchange="updateItemField(${index}, 'embroideryCost', this.value)" 
-                   class="table-cell-input text-right w-24 text-[#57534e]">
-          </td>
-
-          <td class="py-2.5 px-3 text-right bg-[#faf6ee]">
-            <div class="font-bold tabular-nums text-[#9a3412] text-xs">
-              ${formatRD(totalCostUnit)}
-            </div>
-            <span class="text-[10px] text-[#78716c] block tabular-nums">
-              Lote: ${formatRD(totalRowCost)}
-            </span>
-          </td>
-
-          <td class="py-2.5 px-2 text-right">
-            <input type="number" min="0" step="0.01" value="${sellPrice}" 
-                   onchange="updateItemField(${index}, 'sellPrice', this.value)" 
-                   class="table-cell-input text-right font-bold w-24 text-[#0369a1]">
-            <span class="text-[10px] text-[#78716c] block tabular-nums mt-0.5">
-              Venta: ${formatRD(totalRowRevenue)}
-            </span>
-          </td>
-
-          <td class="py-2.5 px-3 text-right bg-[#f0fdf4]">
-            <div class="font-bold tabular-nums text-[#15803d] text-xs">
-              ${formatRD(profitUnit)}
-            </div>
-            <div class="flex items-center justify-end gap-1.5 mt-0.5">
-              <span class="text-[10px] text-[#44403c] tabular-nums">${formatRD(totalRowProfit)}</span>
-              <span class="text-[9px] px-1.5 py-0.2 rounded font-bold ${marginPercent >= 70 ? 'bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0]' : 'bg-[#fef3c7] text-[#b45309] border border-[#fde68a]'}">
-                ${marginPercent.toFixed(1)}%
-              </span>
-            </div>
-          </td>
-
-          <td class="py-2.5 px-2 text-center">
-            <div class="flex items-center justify-center gap-0.5">
-              <button onclick="editItemModal(${index})" title="Editar imagen y detalles" class="btn-pressable p-1 text-[#78716c] hover:text-[#1c1917] rounded-md hover:bg-[#eadecc]">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-              </button>
-              <button onclick="deleteItem(${index})" title="Eliminar fila" class="btn-pressable p-1 text-[#a8a29e] hover:text-[#be123c] rounded-md hover:bg-[#fee2e2]">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              </button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      // Update Footer Totals
-      document.getElementById("footTotalQty").innerText = totalUnits;
-      document.getElementById("footTotalBuy").innerText = formatRD(sumBuyTotal);
-      document.getElementById("footTotalShip").innerText = formatRD(sumShipTotal);
-      document.getElementById("footTotalEmb").innerText = formatRD(sumEmbTotal);
-      document.getElementById("footTotalCost").innerText = formatRD(sumCostTotal);
-      document.getElementById("footTotalRevenue").innerText = formatRD(sumRevenueTotal);
-      document.getElementById("footTotalProfit").innerText = formatRD(sumProfitTotal);
-
-      document.getElementById("kpiTotalUnits").innerText = totalUnits;
-      document.getElementById("tabBadgeInventory").innerText = totalUnits + " uds";
-      document.getElementById("kpiTotalCost").innerText = formatRD(sumCostTotal);
-      document.getElementById("kpiTotalRevenue").innerText = formatRD(sumRevenueTotal);
-      document.getElementById("kpiTotalProfit").innerText = formatRD(sumProfitTotal);
-      document.getElementById("salesKpiTotalRunCostRef").innerText = formatRD(sumCostTotal);
-      document.getElementById("salesKpiTargetProfitRef").innerText = formatRD(sumProfitTotal);
-
-      const avgCost = totalUnits > 0 ? (sumCostTotal / totalUnits) : 0;
-      const avgPrice = totalUnits > 0 ? (sumRevenueTotal / totalUnits) : 0;
-      const globalMargin = sumRevenueTotal > 0 ? ((sumProfitTotal / sumRevenueTotal) * 100) : 0;
-      const roiPercent = sumCostTotal > 0 ? ((sumProfitTotal / sumCostTotal) * 100) : 0;
-      const markup = sumCostTotal > 0 ? (sumRevenueTotal / sumCostTotal) : 0;
-
-      document.getElementById("kpiAvgCostUnit").innerText = formatRD(avgCost);
-      document.getElementById("kpiAvgPriceUnit").innerText = formatRD(avgPrice);
-      document.getElementById("kpiProfitMarginPercent").innerText = globalMargin.toFixed(1) + "%";
-      document.getElementById("kpiROI").innerText = "+" + roiPercent.toFixed(1) + "%";
-      document.getElementById("kpiMarkup").innerText = markup.toFixed(2) + "x";
-
-      const costRatio = sumRevenueTotal > 0 ? ((sumCostTotal / sumRevenueTotal) * 100) : 0;
-      const profitRatio = sumRevenueTotal > 0 ? ((sumProfitTotal / sumRevenueTotal) * 100) : 0;
-
-      document.getElementById("ratioCostBar").style.width = `${Math.min(100, Math.max(0, costRatio))}%`;
-      document.getElementById("ratioProfitBar").style.width = `${Math.min(100, Math.max(0, profitRatio))}%`;
-      document.getElementById("ratioCostLabel").innerText = `${costRatio.toFixed(1)}% (${formatRD(sumCostTotal)})`;
-      document.getElementById("ratioProfitLabel").innerText = `${profitRatio.toFixed(1)}% (${formatRD(sumProfitTotal)})`;
-    }
-
-    // ========================================================
-    // RENDER SALES STEPPERS (+ / -) & FULL DATA WIDTH
-    // ========================================================
-    function renderSalesSteppers() {
-      const tbody = document.getElementById("salesStepperTableBody");
-      tbody.innerHTML = "";
-
-      let totalSoldUnits = 0;
-      let totalStockCapacity = 0;
-      let totalRealizedRevenue = 0;
-      let totalRealizedCost = 0;
-      let totalRealizedProfit = 0;
-      let totalProjectedProfit = 0;
-
-      inventory.forEach(item => {
-        const invQty = Number(item.qty) || 0;
-        const soldQty = Number(salesCounts[item.id]) || 0;
-        const remainingQty = Math.max(0, invQty - soldQty);
-
-        const unitCost = (Number(item.buyPrice) || 0) + (Number(item.shipping) || 0) + (Number(item.embroideryCost) || 0);
-        const unitPrice = Number(item.sellPrice) || 0;
-        const unitProfit = unitPrice - unitCost;
-        const unitMarginPct = unitPrice > 0 ? (unitProfit / unitPrice) * 100 : 0;
-
-        const rowRevenue = unitPrice * soldQty;
-        const rowCost = unitCost * soldQty;
-        const rowProfit = unitProfit * soldQty;
-
-        totalSoldUnits += soldQty;
-        totalStockCapacity += invQty;
-        totalRealizedRevenue += rowRevenue;
-        totalRealizedCost += rowCost;
-        totalRealizedProfit += rowProfit;
-        totalProjectedProfit += unitProfit * invQty;
-
-        const isSoldOut = (soldQty >= invQty && invQty > 0);
-        const isLowStock = (remainingQty > 0 && remainingQty <= 2);
-
-        const tr = document.createElement("tr");
-        tr.className = "row-hover";
-
-        tr.innerHTML = `
-          <!-- FOTO -->
-          <td class="py-2.5 px-3 text-center w-14">
-            <button onclick="openImageModal('${item.image || ''}', '${escapeHtml(item.name)}', '${formatRD(unitPrice)}')" 
-                    class="btn-pressable group/img inline-block focus:outline-none" title="Ampliar imagen">
-              <img src="${item.image || 'totebagStudio.jpeg'}" 
-                   alt="${escapeHtml(item.name)}" 
-                   onerror="this.src='totebagStudio.jpeg'"
-                   class="w-10 h-10 object-cover rounded-xl border border-[#d8cdbd] group-hover/img:border-[#b85d19] shadow-xs">
-            </button>
-          </td>
-
-          <!-- NOMBRE -->
-          <td class="py-2.5 px-3">
-            <div class="flex flex-col">
-              <span class="font-semibold text-[#1c1917] text-xs">${escapeHtml(item.name)}</span>
-              <span class="text-[10px] text-[#78716c] font-mono mt-0.5">Margen unit.: ${formatRD(unitProfit)} (${unitMarginPct.toFixed(1)}%)</span>
-            </div>
-          </td>
-
-          <!-- STEPPER COUNTER WITH TOTAL IN INVENTORY IN CENTER -->
-          <td class="py-2 px-3 text-center w-56 bg-[#faf6ee]">
-            <div class="inline-flex items-center gap-1.5 bg-[#ffffff] p-1 rounded-xl border border-[#d8cdbd] shadow-2xs">
-              
-              <!-- MINUS BUTTON -->
-              <button onclick="decrementSold('${item.id}')" 
-                      ${soldQty <= 0 ? 'disabled' : ''} 
-                      class="btn-pressable stepper-btn stepper-btn-minus" 
-                      title="Reducir una venta">
-                −
-              </button>
-
-              <!-- CENTER: VENDIDAS & TOTAL EN INVENTARIO -->
-              <div class="px-2.5 py-0.5 min-w-[95px] text-center select-none">
-                <div class="flex items-baseline justify-center gap-1">
-                  <span class="text-base font-bold font-mono text-[#b85d19] tabular-nums">${soldQty}</span>
-                  <span class="text-[11px] text-[#78716c] font-mono">/ ${invQty}</span>
-                </div>
-                <div class="text-[9px] font-mono tracking-tight ${isSoldOut ? 'text-[#be123c] font-bold' : isLowStock ? 'text-[#b45309]' : 'text-[#15803d]'}">
-                  ${isSoldOut ? '0 restantes' : remainingQty + ' disponibles'}
-                </div>
-              </div>
-
-              <!-- PLUS BUTTON -->
-              <button onclick="incrementSold('${item.id}')" 
-                      ${soldQty >= invQty ? 'disabled' : ''} 
-                      class="btn-pressable stepper-btn stepper-btn-plus" 
-                      title="Sumar una venta (+)">
-                +
-              </button>
-
-            </div>
-          </td>
-
-          <!-- PVP UNITARIO -->
-          <td class="py-2.5 px-3 text-right tabular-nums text-[#292524] w-28">
-            ${formatRD(unitPrice)}
-          </td>
-
-          <!-- COSTO UNITARIO -->
-          <td class="py-2.5 px-3 text-right tabular-nums text-[#78716c] w-28">
-            ${formatRD(unitCost)}
-          </td>
-
-          <!-- TOTAL COBRADO -->
-          <td class="py-2.5 px-3 text-right tabular-nums text-[#0369a1] font-bold w-32">
-            ${formatRD(rowRevenue)}
-          </td>
-
-          <!-- TOTAL COSTO -->
-          <td class="py-2.5 px-3 text-right tabular-nums text-[#be123c] w-32">
-            ${formatRD(rowCost)}
-          </td>
-
-          <!-- BENEFICIO REALIZADO -->
-          <td class="py-2.5 px-3 text-right tabular-nums text-[#15803d] font-bold bg-[#f0fdf4] w-36">
-            <div>${formatRD(rowProfit)}</div>
-            <span class="text-[9px] text-[#166534] font-mono">
-              ${soldQty > 0 ? (unitMarginPct.toFixed(1) + '%') : '0.0%'}
-            </span>
-          </td>
-
-          <!-- ESTADO STOCK (COMPLETE TEXT, AMPLE WIDTH) -->
-          <td class="py-2.5 px-3 text-center w-36">
-            <span class="inline-block text-[11px] px-2.5 py-1 rounded-full font-medium whitespace-nowrap ${
-              isSoldOut ? 'bg-[#fee2e2] text-[#be123c] border border-[#fecaca] font-bold' :
-              isLowStock ? 'bg-[#fef3c7] text-[#b45309] border border-[#fde68a]' :
-              'bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0]'
-            }">
-              ${isSoldOut ? 'Agotado' : isLowStock ? 'Últimas ' + remainingQty : 'En stock (' + remainingQty + ')'}
-            </span>
-          </td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-
-      // Update Sales Footers
-      const totalRemainingStock = Math.max(0, totalStockCapacity - totalSoldUnits);
-      document.getElementById("salesFootStepperTotal").innerText = `${totalSoldUnits} vendidas / ${totalStockCapacity} total`;
-      document.getElementById("salesFootRevenue").innerText = formatRD(totalRealizedRevenue);
-      document.getElementById("salesFootCost").innerText = formatRD(totalRealizedCost);
-      document.getElementById("salesFootProfit").innerText = formatRD(totalRealizedProfit);
-      document.getElementById("salesFootStockStatus").innerText = `${totalRemainingStock} disponibles`;
-
-      // Update Header Badges
-      document.getElementById("tabBadgeSales").innerText = `${totalSoldUnits} vendidas`;
-
-      // Update KPI Cards
-      const realMarginPct = totalRealizedRevenue > 0 ? (totalRealizedProfit / totalRealizedRevenue) * 100 : 0;
-      const progressAgainstTargetPct = totalProjectedProfit > 0 ? (totalRealizedProfit / totalProjectedProfit) * 100 : 0;
-
-      document.getElementById("salesKpiRevenue").innerText = formatRD(totalRealizedRevenue);
-      document.getElementById("salesKpiCost").innerText = formatRD(totalRealizedCost);
-      document.getElementById("salesKpiProfit").innerText = formatRD(totalRealizedProfit);
-      document.getElementById("salesKpiQtySold").innerText = `${totalSoldUnits} de ${totalStockCapacity} uds`;
-      document.getElementById("salesKpiStockLeft").innerText = `${totalRemainingStock} restantes`;
-      document.getElementById("salesKpiMarginPct").innerText = realMarginPct.toFixed(1) + "%";
-      document.getElementById("salesKpiProgressPct").innerText = progressAgainstTargetPct.toFixed(1) + "%";
-
-      // Progress bar against projected target
-      document.getElementById("salesProgressLabelProfit").innerText = formatRD(totalRealizedProfit);
-      document.getElementById("salesProgressLabelTarget").innerText = `${formatRD(totalProjectedProfit)} (Meta Total)`;
-      document.getElementById("salesRunProgressBar").style.width = `${Math.min(100, Math.max(0, progressAgainstTargetPct))}%`;
-    }
-
-    // ==========================================
-    // STEPPER ACTIONS: INCREMENT / DECREMENT
-    // ==========================================
-    function incrementSold(itemId) {
-      const item = inventory.find(i => i.id === itemId);
-      if (!item) return;
-
-      const current = Number(salesCounts[itemId]) || 0;
-      const maxQty = Number(item.qty) || 0;
-
-      if (current < maxQty) {
-        salesCounts[itemId] = current + 1;
-        saveAll();
-        renderSalesSteppers();
-
-        const unitCost = (Number(item.buyPrice) || 0) + (Number(item.shipping) || 0) + (Number(item.embroideryCost) || 0);
-        const unitProfit = (Number(item.sellPrice) || 0) - unitCost;
-        showToast(`+1 ${item.name} vendido (+${formatRD(unitProfit)})`, "🛍️");
-      }
-    }
-
-    function decrementSold(itemId) {
-      const item = inventory.find(i => i.id === itemId);
-      if (!item) return;
-
-      const current = Number(salesCounts[itemId]) || 0;
-      if (current > 0) {
-        salesCounts[itemId] = current - 1;
-        saveAll();
-        renderSalesSteppers();
-        showToast(`-1 ${item.name} corregido`, "↩️");
-      }
-    }
-
-    // ==========================================
-    // EXPORT FUNCTIONS (GOOGLE SHEETS & CSV)
-    // ==========================================
-    function copyCurrentModuleForSheets() {
-      if (currentModule === "sales") {
-        copySalesLogForSheets();
+      if (tab === 'ventas') {
+        v.classList.remove('hidden');
+        v.classList.add('flex');
+        i.classList.add('hidden');
+        i.classList.remove('flex');
+        btnV.className = "apple-btn px-4 py-1.5 rounded-lg text-xs font-semibold bg-white text-stone-900 shadow-sm";
+        btnI.className = "apple-btn px-4 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-stone-900";
       } else {
-        copyForGoogleSheets();
+        i.classList.remove('hidden');
+        i.classList.add('flex');
+        v.classList.add('hidden');
+        v.classList.remove('flex');
+        btnI.className = "apple-btn px-4 py-1.5 rounded-lg text-xs font-semibold bg-white text-stone-900 shadow-sm";
+        btnV.className = "apple-btn px-4 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-stone-900";
       }
-    }
+    };
 
-    function exportCurrentModuleCSV() {
-      if (currentModule === "sales") {
-        exportSalesCSV();
-      } else {
-        exportCSV();
-      }
-    }
+    // Exportar Sheets
+    window.copyToSheets = function() {
+      const headers = ["Artículo", "Cantidad", "P. Compra", "Shipping", "Bordado", "Costo Total", "P. Venta", "Margen %", "Beneficio/u", "Beneficio Total Línea", "Unidades Vendidas", "Ingreso Recaudado"];
+      const rows = products.map(p => {
+        const totalUnitCost = p.buyPrice + p.shipping + p.embroidery;
+        const profitPerUnit = p.sellPrice - totalUnitCost;
+        const marginPct = (profitPerUnit / p.sellPrice) * 100;
+        const totalLineProfit = profitPerUnit * p.qty;
+        const sold = salesState[p.id] || 0;
+        const revenue = sold * p.sellPrice;
 
-    function copyForGoogleSheets() {
-      let tsv = "Nombre de articulo\tCantidad\tPrecio de compra\tShipping\tCosto de bordado\tCosto total\tPrecio de venta\tMargen RD$\tMargen %\n";
-      let totalQty = 0;
-      let totalCostSum = 0;
-      let totalRevenueSum = 0;
-      let totalProfitSum = 0;
-
-      inventory.forEach(item => {
-        const qty = Number(item.qty) || 0;
-        const buy = Number(item.buyPrice) || 0;
-        const ship = Number(item.shipping) || 0;
-        const emb = Number(item.embroideryCost) || 0;
-        const costUnit = buy + ship + emb;
-        const sell = Number(item.sellPrice) || 0;
-        const profitUnit = sell - costUnit;
-        const marginPct = sell > 0 ? (profitUnit / sell) * 100 : 0;
-
-        totalQty += qty;
-        totalCostSum += costUnit * qty;
-        totalRevenueSum += sell * qty;
-        totalProfitSum += profitUnit * qty;
-
-        tsv += `${item.name}\t${qty}\t${buy.toFixed(2)}\t${ship.toFixed(2)}\t${emb.toFixed(2)}\t${costUnit.toFixed(2)}\t${sell.toFixed(2)}\t${profitUnit.toFixed(2)}\t${marginPct.toFixed(2)}%\n`;
+        return [
+          p.name,
+          p.qty,
+          p.buyPrice,
+          p.shipping,
+          p.embroidery,
+          totalUnitCost,
+          p.sellPrice,
+          marginPct.toFixed(2) + "%",
+          profitPerUnit,
+          totalLineProfit,
+          sold,
+          revenue
+        ].join("\t");
       });
 
-      const globalMargin = totalRevenueSum > 0 ? ((totalProfitSum / totalRevenueSum) * 100).toFixed(2) : "0.00";
-      tsv += `TOTAL INVENTARIO\t${totalQty}\t\t\t\t${totalCostSum.toFixed(2)}\t${totalRevenueSum.toFixed(2)}\t${totalProfitSum.toFixed(2)}\t${globalMargin}%\n`;
-
-      navigator.clipboard.writeText(tsv).then(() => {
-        showToast("¡Inventario copiado! Pega con Ctrl+V en Sheets", "📋");
-      }).catch(() => {
-        prompt("Copia la tabla:", tsv);
+      const tsvContent = [headers.join("\t"), ...rows].join("\n");
+      navigator.clipboard.writeText(tsvContent).then(() => {
+        alert("¡Copiado! Pega en Google Sheets con Ctrl + V.");
       });
-    }
+    };
 
-    function copySalesLogForSheets() {
-      let tsv = "Nombre de Artículo\tTotal Inventario\tVendidas (+)\tRestantes\tPrecio Venta Unit.\tCosto Unitario\tTotal Cobrado\tTotal Costo\tBeneficio Neto Realizado\tMargen Real %\n";
-      let totalInv = 0, totalSold = 0, totalRev = 0, totalCost = 0, totalProf = 0;
+    // Descargar CSV
+    window.downloadCSV = function() {
+      const headers = ["Artículo", "Cantidad", "P. Compra", "Shipping", "Bordado", "Costo Total", "P. Venta", "Margen %", "Beneficio/u", "Beneficio Total Línea", "Vendidas", "Recaudado"];
+      const rows = products.map(p => {
+        const totalUnitCost = p.buyPrice + p.shipping + p.embroidery;
+        const profitPerUnit = p.sellPrice - totalUnitCost;
+        const marginPct = (profitPerUnit / p.sellPrice) * 100;
+        const totalLineProfit = profitPerUnit * p.qty;
+        const sold = salesState[p.id] || 0;
+        const revenue = sold * p.sellPrice;
 
-      inventory.forEach(item => {
-        const invQty = Number(item.qty) || 0;
-        const soldQty = Number(salesCounts[item.id]) || 0;
-        const remQty = Math.max(0, invQty - soldQty);
-
-        const unitCost = (Number(item.buyPrice) || 0) + (Number(item.shipping) || 0) + (Number(item.embroideryCost) || 0);
-        const unitPrice = Number(item.sellPrice) || 0;
-        const unitProfit = unitPrice - unitCost;
-        const unitMarginPct = unitPrice > 0 ? (unitProfit / unitPrice) * 100 : 0;
-
-        const rowRev = unitPrice * soldQty;
-        const rowCost = unitCost * soldQty;
-        const rowProfit = unitProfit * soldQty;
-
-        totalInv += invQty;
-        totalSold += soldQty;
-        totalRev += rowRev;
-        totalCost += rowCost;
-        totalProf += rowProfit;
-
-        tsv += `${item.name}\t${invQty}\t${soldQty}\t${remQty}\t${unitPrice.toFixed(2)}\t${unitCost.toFixed(2)}\t${rowRev.toFixed(2)}\t${rowCost.toFixed(2)}\t${rowProfit.toFixed(2)}\t${unitMarginPct.toFixed(2)}%\n`;
+        return [
+          `"${p.name}"`,
+          p.qty,
+          p.buyPrice,
+          p.shipping,
+          p.embroidery,
+          totalUnitCost,
+          p.sellPrice,
+          `"${marginPct.toFixed(2)}%"`,
+          profitPerUnit,
+          totalLineProfit,
+          sold,
+          revenue
+        ].join(",");
       });
 
-      const avgMargin = totalRev > 0 ? ((totalProf / totalRev) * 100).toFixed(2) : "0.00";
-      tsv += `TOTAL RUN EN VIVO\t${totalInv}\t${totalSold}\t${totalInv - totalSold}\t\t\t${totalRev.toFixed(2)}\t${totalCost.toFixed(2)}\t${totalProf.toFixed(2)}\t${avgMargin}%\n`;
-
-      navigator.clipboard.writeText(tsv).then(() => {
-        showToast("¡Ventas del Run copiadas! Pega con Ctrl+V en Sheets", "📋");
-      }).catch(() => {
-        prompt("Copia las ventas:", tsv);
-      });
-    }
-
-    function exportCSV() {
-      let csv = "\uFEFFNombre de articulo,Cantidad,Precio de compra,Shipping,Costo de bordado,Costo total unitario,Costo total lote,Precio de venta unitario,Venta total lote,Margen unitario,Margen porcentaje\n";
-
-      inventory.forEach(item => {
-        const qty = Number(item.qty) || 0;
-        const buy = Number(item.buyPrice) || 0;
-        const ship = Number(item.shipping) || 0;
-        const emb = Number(item.embroideryCost) || 0;
-        const costUnit = buy + ship + emb;
-        const costBatch = costUnit * qty;
-        const sell = Number(item.sellPrice) || 0;
-        const sellBatch = sell * qty;
-        const profitUnit = sell - costUnit;
-        const marginPct = sell > 0 ? ((profitUnit / sell) * 100).toFixed(2) + "%" : "0%";
-
-        const safeName = `"${item.name.replace(/"/g, '""')}"`;
-        csv += `${safeName},${qty},${buy.toFixed(2)},${ship.toFixed(2)},${emb.toFixed(2)},${costUnit.toFixed(2)},${costBatch.toFixed(2)},${sell.toFixed(2)},${sellBatch.toFixed(2)},${profitUnit.toFixed(2)},${marginPct}\n`;
-      });
-
-      downloadFile(csv, `Inventario_Totebags_${new Date().toISOString().split('T')[0]}.csv`, "text/csv;charset=utf-8;");
-      showToast("Archivo CSV de inventario descargado", "📥");
-    }
-
-    function exportSalesCSV() {
-      let csv = "\uFEFFArtículo,Total Inventario,Vendidas,Restantes,Precio Venta Unitario,Costo Unitario,Total Cobrado,Total Costo,Beneficio Neto,Margen %\n";
-
-      inventory.forEach(item => {
-        const invQty = Number(item.qty) || 0;
-        const soldQty = Number(salesCounts[item.id]) || 0;
-        const remQty = Math.max(0, invQty - soldQty);
-
-        const unitCost = (Number(item.buyPrice) || 0) + (Number(item.shipping) || 0) + (Number(item.embroideryCost) || 0);
-        const unitPrice = Number(item.sellPrice) || 0;
-        const unitProfit = unitPrice - unitCost;
-        const unitMarginPct = unitPrice > 0 ? ((unitProfit / unitPrice) * 100).toFixed(2) + "%" : "0%";
-
-        const rowRev = (unitPrice * soldQty).toFixed(2);
-        const rowCost = (unitCost * soldQty).toFixed(2);
-        const rowProfit = (unitProfit * soldQty).toFixed(2);
-
-        const safeName = `"${(item.name || '').replace(/"/g, '""')}"`;
-        csv += `${safeName},${invQty},${soldQty},${remQty},${unitPrice.toFixed(2)},${unitCost.toFixed(2)},${rowRev},${rowCost},${rowProfit},${unitMarginPct}\n`;
-      });
-
-      downloadFile(csv, `Ventas_Run_Totebags_${new Date().toISOString().split('T')[0]}.csv`, "text/csv;charset=utf-8;");
-      showToast("Archivo CSV de ventas descargado", "📥");
-    }
-
-    function downloadFile(content, fileName, mimeType) {
-      const blob = new Blob([content], { type: mimeType });
+      const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Inventario_Halloween_Totebags_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
 
-    function openInSheets() {
-      copyCurrentModuleForSheets();
-      window.open("https://sheets.new", "_blank");
-      showToast("Abriendo sheets.new... pulsa Ctrl+V", "🚀");
-    }
-
-    // ==========================================
-    // INVENTORY MODAL & EDIT HELPERS
-    // ==========================================
-    function updateItemField(index, field, value) {
-      if (!inventory[index]) return;
-      if (field === 'name') {
-        inventory[index].name = value;
-      } else {
-        const numVal = parseFloat(value);
-        inventory[index][field] = isNaN(numVal) ? 0 : numVal;
-        if (field === 'buyPrice' && numVal > 0) inventory[index].isSample = false;
-      }
-      saveAll();
-      renderAll();
-    }
-
-    function deleteItem(index) {
-      if (confirm(`¿Eliminar "${inventory[index].name}" del inventario?`)) {
-        const deleted = inventory.splice(index, 1);
-        if (deleted && deleted[0]) delete salesCounts[deleted[0].id];
-        saveAll();
-        renderAll();
-        showToast("Artículo eliminado", "🗑️");
-      }
-    }
-
-    function openNewItemModal() {
-      document.getElementById("modalFormTitle").innerText = "Agregar Nuevo Artículo";
-      document.getElementById("formItemId").value = "";
-      document.getElementById("formName").value = "";
-      document.getElementById("formQty").value = 1;
-      document.getElementById("formBuyPrice").value = 0;
-      document.getElementById("formShipping").value = 0;
-      document.getElementById("formEmbroidery").value = 250;
-      document.getElementById("formSellPrice").value = 1895;
-      document.getElementById("formImgUrl").value = "";
-      document.getElementById("imagePreviewContainer").classList.add("hidden");
-      document.getElementById("itemModal").classList.add("is-open");
-    }
-
-    function editItemModal(index) {
-      const item = inventory[index];
-      if (!item) return;
-      document.getElementById("modalFormTitle").innerText = "Editar Artículo";
-      document.getElementById("formItemId").value = index;
-      document.getElementById("formName").value = item.name;
-      document.getElementById("formQty").value = item.qty;
-      document.getElementById("formBuyPrice").value = item.buyPrice;
-      document.getElementById("formShipping").value = item.shipping || 0;
-      document.getElementById("formEmbroidery").value = item.embroideryCost;
-      document.getElementById("formSellPrice").value = item.sellPrice;
-      document.getElementById("formImgUrl").value = item.image || "";
-
-      if (item.image) {
-        document.getElementById("formImgPreview").src = item.image;
-        document.getElementById("imagePreviewContainer").classList.remove("hidden");
-      } else {
-        document.getElementById("imagePreviewContainer").classList.add("hidden");
-      }
-
-      document.getElementById("itemModal").classList.add("is-open");
-    }
-
-    function closeItemModal() {
-      document.getElementById("itemModal").classList.remove("is-open");
-    }
-
-    function handleImageUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const dataUrl = evt.target.result;
-        document.getElementById("formImgUrl").value = dataUrl;
-        document.getElementById("formImgPreview").src = dataUrl;
-        document.getElementById("imagePreviewContainer").classList.remove("hidden");
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function handleItemFormSubmit(e) {
-      e.preventDefault();
-      const idVal = document.getElementById("formItemId").value;
-      const name = document.getElementById("formName").value.trim();
-      const qty = parseInt(document.getElementById("formQty").value) || 0;
-      const buyPrice = parseFloat(document.getElementById("formBuyPrice").value) || 0;
-      const shipping = parseFloat(document.getElementById("formShipping").value) || 0;
-      const embroideryCost = parseFloat(document.getElementById("formEmbroidery").value) || 0;
-      const sellPrice = parseFloat(document.getElementById("formSellPrice").value) || 0;
-      const image = document.getElementById("formImgUrl").value.trim() || 'totebagStudio.jpeg';
-
-      if (idVal !== "") {
-        const idx = parseInt(idVal);
-        inventory[idx] = {
-          ...inventory[idx],
-          name,
-          qty,
-          buyPrice,
-          shipping,
-          embroideryCost,
-          sellPrice,
-          image,
-          isSample: (buyPrice === 0)
-        };
-        showToast("Artículo actualizado", "✏️");
-      } else {
-        const newId = "item-" + (Date.now());
-        inventory.push({
-          id: newId,
-          name,
-          qty,
-          buyPrice,
-          shipping,
-          embroideryCost,
-          sellPrice,
-          image,
-          isSample: (buyPrice === 0)
-        });
-        salesCounts[newId] = 0;
-        showToast("Nuevo artículo agregado", "✨");
-      }
-
-      saveAll();
-      renderAll();
-      closeItemModal();
-    }
-
-    function openImageModal(imgSrc, title, price) {
-      document.getElementById("modalImg").src = imgSrc || 'totebagStudio.jpeg';
-      document.getElementById("modalImgTitle").innerText = title;
-      document.getElementById("modalImgSubtitle").innerText = "PVP: " + price;
-      document.getElementById("imageModal").classList.add("is-open");
-    }
-
-    function closeImageModal() {
-      document.getElementById("imageModal").classList.remove("is-open");
-    }
-
-    function toggleSheetsDropdown(e) {
-      e.stopPropagation();
-      document.getElementById("sheetsDropdownContainer").classList.toggle("open");
-    }
-
-    document.addEventListener("click", () => {
-      const container = document.getElementById("sheetsDropdownContainer");
-      if (container) container.classList.remove("open");
-    });
-
-    function showToast(msg, icon = "📋") {
-      const toast = document.getElementById("sonnerToast");
-      document.getElementById("toastMsg").innerText = msg;
-      document.getElementById("toastIcon").innerText = icon;
-      toast.classList.add("is-visible");
-
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove("is-visible");
-      }, 2000);
-    }
-
-    function escapeHtml(text) {
-      if (!text) return "";
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        closeImageModal();
-        closeItemModal();
-        const container = document.getElementById("sheetsDropdownContainer");
-        if (container) container.classList.remove("open");
-      }
-    });
-
-    loadAll();
+    renderAll();
   </script>
 </body>
 </html>
